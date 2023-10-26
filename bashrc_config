@@ -1,0 +1,50 @@
+#!bin/bash
+# enable color ls
+if [ -x /usr/bin/dircolors ]; then
+   test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+
+   alias ls='ls --color=auto'
+   alias dir='dir --color=auto'
+   alias vdir='vdir --color=auto'
+
+   alias grep='grep --color=auto'
+   alias fgrep='fgrep --color=auto'
+   alias egrep='egrep --color=auto'
+fi
+
+enable_auto_git() {
+    echo "Enabling auto status while changes detected"
+    export GIT_AUTO_STATUS=true
+}
+
+disable_auto_git(){
+    echo "Disabling auto status"
+    export GIT_AUTO_STATUS=false
+}
+
+# displays git status if env var set and changes detected
+detect_git_changes(){
+    # check if inside git repo
+    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        # check for changes
+        if  git status --porcelain | grep -q .; then
+            echo "On branch $(git branch --show-current)"
+            git status -s
+        fi
+    fi
+}
+
+# wrapper for detect_git_changes
+auto_git(){
+    if [ "$CURR_CMD" != "git status" ]; then
+        if $GIT_AUTO_STATUS; then
+            detect_git_changes
+        fi
+    fi
+}
+
+# set variables
+trap 'CURR_CMD=$BASH_COMMAND' DEBUG
+export GIT_AUTO_STATUS=false
+export PROMPT_COMMAND='auto_git'
+export PS1='\[\e[1;32m\]\D{%Y-%m-%d}\[\e[33m\]::\[\e[34;49m\]\t \[\e[33m\]\u@\h \[\e[35m\]\w\[\e[0m\] \$'
